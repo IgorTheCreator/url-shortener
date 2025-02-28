@@ -1,0 +1,16 @@
+services:
+  test_db:
+    image: postgres:latest
+    container_name: test_db
+    restart: always
+    ports:
+      - ${DATABASE_PORT}:5432
+    environment:
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+      - POSTGRES_DB=${DATABASE_NAME}
+      - POSTGRES_USER=${DATABASE_USER}
+    volumes:
+      - data_db:/var/lib/postgresql/data
+
+volumes:
+  data_db:
