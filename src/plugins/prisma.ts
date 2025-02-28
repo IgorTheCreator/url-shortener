@@ -19,7 +19,7 @@ async function prismaPlugin(server: FastifyInstance) {
   const prisma = await connectToDatabase()
 
   server.decorate('prisma', prisma)
-  server.addHook('onClose', async function dataSourceOnCloseHook() {
+  server.addHook('onClose', async function prismaOnCloseHook() {
     await server.prisma.$disconnect()
   })
 }

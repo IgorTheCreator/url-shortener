@@ -11,6 +11,27 @@ services:
       - POSTGRES_USER=${DATABASE_USER}
     volumes:
       - data_db:/var/lib/postgresql/data
+    networks:
+      - app_network
+
+  test_cache:
+    image: eqalpha/keydb:latest
+    container_name: test_cache
+    restart: unless-stopped
+    environment:
+      - KEYDB_PASSWORD=${CACHE_PASSWORD}
+    command: keydb-server --server-threads 4 --requirepass $$KEYDB_PASSWORD
+    ports:
+      - ${CACHE_PORT}:6379
+    volumes:
+      - cache_data:/data
+    networks:
+      - app_network
 
 volumes:
   data_db:
+  cache_data:
+    driver: local
+
+networks:
+  app_network:

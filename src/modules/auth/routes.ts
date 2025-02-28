@@ -53,14 +53,6 @@ const authRoutes: FastifyPluginAsyncZod = async function authRoutes(server: Fast
     }
   )
 
-  server.get(
-    '/test',
-    { onRequest: [server.authenticate(Role.ADMIN, Role.USER)] },
-    async function test(request: FastifyRequest) {
-      return request.user
-    }
-  )
-
   server.post(
     '/logout',
     {
@@ -100,6 +92,14 @@ const authRoutes: FastifyPluginAsyncZod = async function authRoutes(server: Fast
         sameSite: true
       })
       return { accessToken }
+    }
+  )
+
+  server.get(
+    '/test',
+    { onRequest: [server.authenticate(Role.ADMIN, Role.USER)] },
+    async function test(request: FastifyRequest) {
+      return request.user
     }
   )
 }
