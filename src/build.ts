@@ -1,8 +1,7 @@
 import { join } from 'node:path'
 import Fastify from 'fastify'
 import AutoLoad from '@fastify/autoload'
-import { serializerCompiler, validatorCompiler, } from 'fastify-type-provider-zod'
-
+import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod'
 
 export async function build(options = {}) {
   const app = Fastify(options)

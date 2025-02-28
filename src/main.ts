@@ -1,5 +1,5 @@
 import 'dotenv/config'
-import * as closeWithGrace from 'close-with-grace'
+import closeWithGrace from 'close-with-grace'
 import { build } from './build'
 import { serverOptions } from './configs/server-options'
 

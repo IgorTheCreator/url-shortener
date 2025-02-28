@@ -1,14 +1,20 @@
+import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import fp from 'fastify-plugin'
-import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import fastifyJwt from '@fastify/jwt';
+import fastifyJwt from '@fastify/jwt'
+import { Role } from '@prisma/client'
 
 declare module 'fastify' {
   interface FastifyInstance {
-    authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>
+    authenticate: (
+      ...roles: Role[]
+    ) => (request: FastifyRequest, reply: FastifyReply) => Promise<void>
+    refresh: (request: FastifyRequest, reply: FastifyReply) => Promise<void>
   }
 }
 
 async function jwtPlugin(server: FastifyInstance) {
+  const refreshTokens = server.prisma.refreshToken
+
   server.register(fastifyJwt, {
     secret: process.env.JWT_TOKEN_SECRET,
     sign: {
@@ -16,13 +22,31 @@ async function jwtPlugin(server: FastifyInstance) {
     }
   })
 
-  server.decorate('authenticate', async function authenticate(reqeust: FastifyRequest, reply: FastifyReply) {
+  server.decorate('authenticate', function authenticate(...roles) {
+    return async function auth(request: FastifyRequest, reply: FastifyReply) {
+      try {
+        const payload = await request.jwtVerify<{ id: string; role: Role }>()
+        if (roles.length > 0 && !roles.includes(payload.role)) {
+          throw server.httpErrors.unauthorized()
+        }
+      } catch (e) {
+        reply.send(e)
+      }
+    }
+  })
+
+  server.decorate('refresh', async function refresh(request, reply) {
     try {
-      await reqeust.jwtVerify()
+      const refreshToken = await refreshTokens.findUnique({
+        where: {
+          token: request.cookies['refreshToken']
+        }
+      })
+      if (!refreshToken) throw server.httpErrors.unauthorized()
     } catch (e) {
       reply.send(e)
     }
   })
 }
 
-export default fp(jwtPlugin, { name: 'jwt' })
+export default fp(jwtPlugin, { name: 'jwt', dependencies: ['cookie', 'prisma'] })

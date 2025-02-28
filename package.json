@@ -5,8 +5,10 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/main.js",
-    "start:dev": "ts-node-dev src/main.ts",
+    "start:dev": "tsx watch src/main.ts",
     "start:prod": "tsc && node dist/main.js",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -15,6 +17,7 @@
   "description": "",
   "dependencies": {
     "@fastify/autoload": "^6.1.0",
+    "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.0.0",
     "@fastify/jwt": "^9.0.4",
     "@fastify/sensible": "^6.0.3",
@@ -30,10 +33,16 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@eslint/js": "^9.21.0",
     "@types/node": "^22.13.5",
+    "eslint": "^9.21.0",
+    "eslint-config-prettier": "^10.0.2",
+    "globals": "^16.0.0",
+    "prettier": "^3.5.2",
     "prisma": "^6.4.1",
-    "ts-node-dev": "^2.0.0",
-    "typescript": "^5.7.3"
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.25.0"
   },
   "exports": {
     "import": "./dist/main.js",

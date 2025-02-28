@@ -1,24 +1,27 @@
 import * as crypto from 'node:crypto'
+import { FastifyInstance } from 'fastify'
 import fp from 'fastify-plugin'
-import { FastifyInstance } from "fastify";
-import { ICredentials } from './interfaces';
+import { IAuthResponse, ICredentials, ILogoutResponse } from './interfaces'
 
 declare module 'fastify' {
   interface FastifyInstance {
     utils: {
-      generateSalt: () => string,
+      generateSalt: () => string
       hashData: (data: string, salt: string) => string
       compare: (data: string, salt: string, hash: string) => boolean
     }
     authService: {
       register: (credentials: ICredentials) => Promise<{ id: string }>
-      login: (credentials: ICredentials) => Promise<{ accessToken: string }>
+      login: (credentials: ICredentials) => Promise<IAuthResponse>
+      logout: (refreshToken: string) => Promise<ILogoutResponse>
+      refresh: (refreshToken: string) => Promise<IAuthResponse>
     }
   }
 }
 
 async function authAutoHooks(server: FastifyInstance) {
   const users = server.prisma.user
+  const refreshTokens = server.prisma.refreshToken
 
   server.decorate('utils', {
     generateSalt() {
@@ -29,7 +32,7 @@ async function authAutoHooks(server: FastifyInstance) {
     },
     compare(data, salt, hash) {
       return hash === this.hashData(data, salt)
-    },
+    }
   })
 
   server.decorate('authService', {
@@ -50,7 +53,7 @@ async function authAutoHooks(server: FastifyInstance) {
           data: {
             email,
             salt,
-            password: hash,
+            password: hash
           },
           select: {
             id: true
@@ -73,7 +76,8 @@ async function authAutoHooks(server: FastifyInstance) {
           select: {
             password: true,
             salt: true,
-            id: true
+            id: true,
+            role: true
           }
         })
         if (!user) throw server.httpErrors.badRequest('Invalid login or password')
@@ -81,17 +85,75 @@ async function authAutoHooks(server: FastifyInstance) {
         const isValidPassword = server.utils.compare(password, user.salt, user.password)
         if (!isValidPassword) throw server.httpErrors.badRequest('Invalid login or password')
 
-        const payload = { id: user.id }
+        const payload = { id: user.id, role: user.role }
         const accessToken = server.jwt.sign(payload)
-        return { accessToken }
+        const refreshToken = crypto.randomUUID()
+        await refreshTokens.create({
+          data: {
+            token: refreshToken,
+            userId: user.id
+          }
+        })
+        return { accessToken, refreshToken }
       } catch (e) {
         server.log.error(e)
         if (e.statusCode < 500) throw e
         throw server.httpErrors.internalServerError('Something went wrong')
       }
+    },
+    async refresh(refreshToken) {
+      try {
+        const token = await refreshTokens.findUnique({
+          where: {
+            token: refreshToken
+          },
+          select: {
+            userId: true,
+            user: {
+              select: {
+                role: true
+              }
+            }
+          }
+        })
+        await refreshTokens.delete({
+          where: {
+            token: refreshToken
+          }
+        })
+
+        const newRefreshToken = crypto.randomUUID()
+        await refreshTokens.create({
+          data: {
+            token: newRefreshToken,
+            userId: token.userId
+          }
+        })
+
+        const payload = { id: token.userId, role: token.user.role }
+        const accessToken = server.jwt.sign(payload)
+        return { accessToken, refreshToken: newRefreshToken }
+      } catch (e) {
+        server.log.error(e)
+        if (e.statusCode < 500) throw e
+        throw server.httpErrors.internalServerError('Something went wrong')
+      }
+    },
+    async logout(refreshToken) {
+      try {
+        await refreshTokens.delete({
+          where: {
+            token: refreshToken
+          }
+        })
+
+        return { message: 'User logged out' }
+      } catch (e) {
+        if (e.statusCode < 500) throw e
+        throw server.httpErrors.internalServerError('Something went wrong')
+      }
     }
   })
-
 }
 
-export default fp(authAutoHooks, { encapsulate: true, dependencies: ['prisma'] })
+export default fp(authAutoHooks, { encapsulate: true, dependencies: ['prisma', 'sensible'] })

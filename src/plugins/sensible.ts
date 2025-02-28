@@ -1,5 +1,5 @@
-import fastifySensible from '@fastify/sensible'
 import { FastifyInstance } from 'fastify'
+import fastifySensible from '@fastify/sensible'
 import fp from 'fastify-plugin'
 
 async function sensiblePlugin(server: FastifyInstance) {
