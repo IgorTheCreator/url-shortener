@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import fp from 'fastify-plugin'
 import fastifyJwt from '@fastify/jwt'
 import { Role } from '@prisma/client'
+import { AsyncTask, CronJob } from 'toad-scheduler'
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -39,13 +40,37 @@ async function jwtPlugin(server: FastifyInstance) {
     try {
       const refreshToken = await refreshTokens.findUnique({
         where: {
-          token: request.cookies['refreshToken']
+          token: request.cookies['refreshToken'],
+          expiresAt: {
+            gte: new Date().toISOString()
+          }
         }
       })
       if (!refreshToken) throw server.httpErrors.unauthorized()
     } catch (e) {
       reply.send(e)
     }
+  })
+
+  const clearRefreshTokensTask = new AsyncTask(
+    'clear expired refresh token',
+    async function clearRefreshTokens() {
+      await refreshTokens.deleteMany({
+        where: {
+          expiresAt: {
+            lt: new Date().toISOString()
+          }
+        }
+      })
+    },
+    async function clearRefreshTokensErrorHandler(e) {
+      server.log.error(e)
+    }
+  )
+  const clearRefreshTokensJob = new CronJob({ cronExpression: '0 0 * * 0' }, clearRefreshTokensTask)
+
+  server.ready().then(() => {
+    server.scheduler.addCronJob(clearRefreshTokensJob)
   })
 }
 

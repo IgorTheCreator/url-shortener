@@ -60,7 +60,8 @@ const authRoutes: FastifyPluginAsyncZod = async function authRoutes(server: Fast
       schema: {
         response: {
           200: LOGOUT_RESPONSE_SCHEMA
-        }
+        },
+        tags: ['auth']
       }
     },
     async function logout(request: FastifyRequest, reply: FastifyReply) {
@@ -78,7 +79,8 @@ const authRoutes: FastifyPluginAsyncZod = async function authRoutes(server: Fast
       schema: {
         response: {
           200: REFRESH_RESPONSE_SCHEMA
-        }
+        },
+        tags: ['auth']
       }
     },
     async function refresh(request: FastifyRequest, reply: FastifyReply) {

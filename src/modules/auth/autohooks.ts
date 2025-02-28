@@ -22,6 +22,7 @@ declare module 'fastify' {
 async function authAutoHooks(server: FastifyInstance) {
   const users = server.prisma.user
   const refreshTokens = server.prisma.refreshToken
+  const REFRESH_TOKEN_VALID_DAYS = 7
 
   server.decorate('utils', {
     generateSalt() {
@@ -91,7 +92,10 @@ async function authAutoHooks(server: FastifyInstance) {
         await refreshTokens.create({
           data: {
             token: refreshToken,
-            userId: user.id
+            userId: user.id,
+            expiresAt: new Date(
+              new Date().setDate(new Date().getDate() + REFRESH_TOKEN_VALID_DAYS)
+            ).toISOString()
           }
         })
         return { accessToken, refreshToken }
@@ -126,7 +130,10 @@ async function authAutoHooks(server: FastifyInstance) {
         await refreshTokens.create({
           data: {
             token: newRefreshToken,
-            userId: token.userId
+            userId: token.userId,
+            expiresAt: new Date(
+              new Date().setDate(new Date().getDate() + REFRESH_TOKEN_VALID_DAYS)
+            ).toISOString()
           }
         })
 
