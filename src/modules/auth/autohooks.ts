@@ -159,7 +159,7 @@ async function authAutoHooks(server: FastifyInstance) {
     },
     async logout(refreshToken, accessToken, sessionId) {
       try {
-        server.keydb.set(sessionId, accessToken, 'EX', 7200)
+        server.redis.set(sessionId, accessToken, 'EX', 7200)
         await refreshTokens.delete({
           where: {
             token: refreshToken

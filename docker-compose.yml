@@ -15,12 +15,12 @@ services:
       - app_network
 
   test_cache:
-    image: eqalpha/keydb:latest
+    image: redis:latest
     container_name: test_cache
     restart: unless-stopped
     environment:
-      - KEYDB_PASSWORD=${CACHE_PASSWORD}
-    command: keydb-server --server-threads 4 --requirepass $$KEYDB_PASSWORD
+      - REDIS_PASSWORD=${CACHE_PASSWORD}
+    command: /bin/sh -c "redis-server --requirepass $$REDIS_PASSWORD --maxmemory 100mb --maxmemory-policy volatile-lru"
     ports:
       - ${CACHE_PORT}:6379
     volumes:

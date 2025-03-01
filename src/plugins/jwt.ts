@@ -28,7 +28,7 @@ async function jwtPlugin(server: FastifyInstance) {
       try {
         const payload = await request.jwtVerify<IPayload>()
 
-        const blacklistedToken = await server.keydb.get(payload.sessionId)
+        const blacklistedToken = await server.redis.get(payload.sessionId)
         if (blacklistedToken) throw server.httpErrors.unauthorized()
 
         if (roles.length > 0 && !roles.includes(payload.role)) {

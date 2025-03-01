@@ -4,7 +4,7 @@ import Redis from 'ioredis'
 
 declare module 'fastify' {
   interface FastifyInstance {
-    keydb: Redis
+    redis: Redis
   }
 }
 
@@ -19,11 +19,11 @@ async function connetToCache() {
 }
 
 async function keydbPlugin(server: FastifyInstance) {
-  const keydb = await connetToCache()
+  const redis = await connetToCache()
 
-  server.decorate('keydb', keydb)
+  server.decorate('redis', redis)
   server.addHook('onClose', async function keydbOnCloseHook() {
-    await server.keydb.disconnect()
+    await server.redis.disconnect()
   })
 }
 
