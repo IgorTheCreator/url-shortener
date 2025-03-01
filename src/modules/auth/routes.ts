@@ -10,6 +10,7 @@ import {
 import fp from 'fastify-plugin'
 import { ICredentials } from './interfaces'
 import { Role } from '@prisma/client'
+import { IPayload } from '../../shared/interfaces'
 
 const authRoutes: FastifyPluginAsyncZod = async function authRoutes(server: FastifyInstance) {
   server.post(
@@ -66,9 +67,11 @@ const authRoutes: FastifyPluginAsyncZod = async function authRoutes(server: Fast
     },
     async function logout(request: FastifyRequest, reply: FastifyReply) {
       const refreshToken = request.cookies['refreshToken']
+      const accessToken = request.headers.authorization.split(' ')[1]
+      const sessionId = (request.user as IPayload).sessionId
 
       reply.code(200)
-      return server.authService.logout(refreshToken)
+      return server.authService.logout(refreshToken, accessToken, sessionId)
     }
   )
 
@@ -101,7 +104,7 @@ const authRoutes: FastifyPluginAsyncZod = async function authRoutes(server: Fast
     '/test',
     { onRequest: [server.authenticate(Role.ADMIN, Role.USER)] },
     async function test(request: FastifyRequest) {
-      return request.user
+      return request.user as IPayload
     }
   )
 }

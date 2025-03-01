@@ -2,6 +2,9 @@ import * as crypto from 'node:crypto'
 import { FastifyInstance } from 'fastify'
 import fp from 'fastify-plugin'
 import { IAuthResponse, ICredentials, ILogoutResponse } from './interfaces'
+import { AsyncTask, CronJob } from 'toad-scheduler'
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
+import { IPayload } from 'src/shared/interfaces'
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -13,7 +16,11 @@ declare module 'fastify' {
     authService: {
       register: (credentials: ICredentials) => Promise<{ id: string }>
       login: (credentials: ICredentials) => Promise<IAuthResponse>
-      logout: (refreshToken: string) => Promise<ILogoutResponse>
+      logout: (
+        refreshToken: string,
+        accessToken: string,
+        sessionId: string
+      ) => Promise<ILogoutResponse>
       refresh: (refreshToken: string) => Promise<IAuthResponse>
     }
   }
@@ -86,7 +93,11 @@ async function authAutoHooks(server: FastifyInstance) {
         const isValidPassword = server.utils.compare(password, user.salt, user.password)
         if (!isValidPassword) throw server.httpErrors.badRequest('Invalid login or password')
 
-        const payload = { id: user.id, role: user.role }
+        const payload: IPayload = {
+          id: user.id,
+          role: user.role,
+          sessionId: `${user.id}-${Date.now()}`
+        }
         const accessToken = server.jwt.sign(payload)
         const refreshToken = crypto.randomUUID()
         await refreshTokens.create({
@@ -146,8 +157,9 @@ async function authAutoHooks(server: FastifyInstance) {
         throw server.httpErrors.internalServerError('Something went wrong')
       }
     },
-    async logout(refreshToken) {
+    async logout(refreshToken, accessToken, sessionId) {
       try {
+        server.keydb.set(sessionId, accessToken, 'EX', 7200)
         await refreshTokens.delete({
           where: {
             token: refreshToken
@@ -156,11 +168,39 @@ async function authAutoHooks(server: FastifyInstance) {
 
         return { message: 'User logged out' }
       } catch (e) {
+        server.log.error(e)
+        if (e instanceof PrismaClientKnownRequestError && e.code === 'P2025') {
+          throw server.httpErrors.notFound()
+        }
         if (e.statusCode < 500) throw e
         throw server.httpErrors.internalServerError('Something went wrong')
       }
     }
   })
+
+  const clearRefreshTokensTask = new AsyncTask(
+    'clear expired refresh token',
+    async function clearRefreshTokens() {
+      await refreshTokens.deleteMany({
+        where: {
+          expiresAt: {
+            lt: new Date().toISOString()
+          }
+        }
+      })
+    },
+    async function clearRefreshTokensErrorHandler(e) {
+      server.log.error(e)
+    }
+  )
+  const clearRefreshTokensJob = new CronJob({ cronExpression: '0 0 * * 0' }, clearRefreshTokensTask)
+
+  server.ready().then(() => {
+    server.scheduler.addCronJob(clearRefreshTokensJob)
+  })
 }
 
-export default fp(authAutoHooks, { encapsulate: true, dependencies: ['prisma', 'sensible'] })
+export default fp(authAutoHooks, {
+  encapsulate: true,
+  dependencies: ['prisma', 'sensible', 'keydb']
+})

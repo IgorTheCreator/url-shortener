@@ -2,7 +2,7 @@ import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import fp from 'fastify-plugin'
 import fastifyJwt from '@fastify/jwt'
 import { Role } from '@prisma/client'
-import { AsyncTask, CronJob } from 'toad-scheduler'
+import { IPayload } from '../shared/interfaces'
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -26,7 +26,11 @@ async function jwtPlugin(server: FastifyInstance) {
   server.decorate('authenticate', function authenticate(...roles) {
     return async function auth(request: FastifyRequest, reply: FastifyReply) {
       try {
-        const payload = await request.jwtVerify<{ id: string; role: Role }>()
+        const payload = await request.jwtVerify<IPayload>()
+
+        const blacklistedToken = await server.keydb.get(payload.sessionId)
+        if (blacklistedToken) throw server.httpErrors.unauthorized()
+
         if (roles.length > 0 && !roles.includes(payload.role)) {
           throw server.httpErrors.unauthorized()
         }
@@ -50,27 +54,6 @@ async function jwtPlugin(server: FastifyInstance) {
     } catch (e) {
       reply.send(e)
     }
-  })
-
-  const clearRefreshTokensTask = new AsyncTask(
-    'clear expired refresh token',
-    async function clearRefreshTokens() {
-      await refreshTokens.deleteMany({
-        where: {
-          expiresAt: {
-            lt: new Date().toISOString()
-          }
-        }
-      })
-    },
-    async function clearRefreshTokensErrorHandler(e) {
-      server.log.error(e)
-    }
-  )
-  const clearRefreshTokensJob = new CronJob({ cronExpression: '0 0 * * 0' }, clearRefreshTokensTask)
-
-  server.ready().then(() => {
-    server.scheduler.addCronJob(clearRefreshTokensJob)
   })
 }
 
