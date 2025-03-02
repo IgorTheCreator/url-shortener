@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 export const CREDENTIALS_SCHEMA = z.object({
-  email: z.string().email().describe('Почта пользователя'),
+  login: z.string().default('username').describe('Логин пользователя'),
   password: z.string().min(8).describe('Пароль пользователя')
 })
 
@@ -13,13 +13,15 @@ export const REGISTER_RESPONSE_SCHEMA = z
 
 export const LOGIN_RESPONSE_SCHEMA = z
   .object({
-    accessToken: z.string()
+    accessToken: z.string(),
+    refreshToken: z.string().optional()
   })
-  .required({ accessToken: true })
+  .required({ accessToken: true, refreshToken: true })
 
-export const REFRESH_RESPONSE_SCHEMA = LOGIN_RESPONSE_SCHEMA.extend({})
+export const REFRESH_RESPONSE_SCHEMA = LOGIN_RESPONSE_SCHEMA.omit({ refreshToken: true })
+
 export const LOGOUT_RESPONSE_SCHEMA = z
   .object({
-    message: z.string()
+    success: z.boolean()
   })
-  .required({ message: true })
+  .required({ success: true })

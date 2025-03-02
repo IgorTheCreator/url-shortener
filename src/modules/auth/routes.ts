@@ -8,9 +8,9 @@ import {
   REGISTER_RESPONSE_SCHEMA
 } from './schemas'
 import fp from 'fastify-plugin'
-import { ICredentials } from './interfaces'
 import { Role } from '@prisma/client'
 import { IPayload } from '../../shared/interfaces'
+import { Credentials } from './types'
 
 const authRoutes: FastifyPluginAsyncZod = async function authRoutes(server: FastifyInstance) {
   server.post(
@@ -24,7 +24,7 @@ const authRoutes: FastifyPluginAsyncZod = async function authRoutes(server: Fast
         tags: ['auth']
       }
     },
-    async function register(reqeust: FastifyRequest<{ Body: ICredentials }>, reply: FastifyReply) {
+    async function register(reqeust: FastifyRequest<{ Body: Credentials }>, reply: FastifyReply) {
       reply.code(201)
       return server.authService.register(reqeust.body)
     }
@@ -41,7 +41,7 @@ const authRoutes: FastifyPluginAsyncZod = async function authRoutes(server: Fast
         tags: ['auth']
       }
     },
-    async function login(reqeust: FastifyRequest<{ Body: ICredentials }>, reply: FastifyReply) {
+    async function login(reqeust: FastifyRequest<{ Body: Credentials }>, reply: FastifyReply) {
       const { accessToken, refreshToken } = await server.authService.login(reqeust.body)
 
       reply.code(200)
