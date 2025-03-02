@@ -109,4 +109,4 @@ const authRoutes: FastifyPluginAsyncZod = async function authRoutes(server: Fast
   )
 }
 
-export default fp(authRoutes, { name: 'auth-routes', encapsulate: true })
+export default fp(authRoutes, { name: 'auth-routes', encapsulate: true, dependencies: ['cookie'] })

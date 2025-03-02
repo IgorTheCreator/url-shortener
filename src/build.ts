@@ -19,7 +19,14 @@ export async function build(options = {}) {
     ignorePattern: /.*(\.js|\.cjs|\.ts)$/i,
     autoHooksPattern: /.*hooks(\.js|\.cjs|\.ts)$/i,
     autoHooks: true,
-    cascadeHooks: true
+    cascadeHooks: true,
+    dirNameRoutePrefix(_, folderName) {
+      if (folderName === 'urls') {
+        return ''
+      } else {
+        return folderName
+      }
+    }
   })
 
   return app

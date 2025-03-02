@@ -28,7 +28,7 @@ async function jwtPlugin(server: FastifyInstance) {
         if (blacklistedToken) throw server.httpErrors.unauthorized()
 
         if (roles.length > 0 && !roles.includes(payload.role)) {
-          throw server.httpErrors.unauthorized()
+          throw server.httpErrors.methodNotAllowed("You don't have permissions")
         }
       } catch (e) {
         reply.send(e)

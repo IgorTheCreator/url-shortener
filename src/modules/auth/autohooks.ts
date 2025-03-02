@@ -210,5 +210,5 @@ async function authAutoHooks(server: FastifyInstance) {
 
 export default fp(authAutoHooks, {
   encapsulate: true,
-  dependencies: ['prisma', 'sensible', 'redis']
+  dependencies: ['prisma', 'sensible', 'redis', 'jwt', 'cron']
 })

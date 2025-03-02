@@ -24,4 +24,4 @@ async function keydbPlugin(server: FastifyInstance) {
   })
 }
 
-export default fp(keydbPlugin, { name: 'keydb' })
+export default fp(keydbPlugin, { name: 'redis' })

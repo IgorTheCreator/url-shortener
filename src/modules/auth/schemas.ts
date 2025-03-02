@@ -1,9 +1,11 @@
 import { z } from 'zod'
 
-export const CREDENTIALS_SCHEMA = z.object({
-  login: z.string().default('username').describe('Логин пользователя'),
-  password: z.string().min(8).describe('Пароль пользователя')
-})
+export const CREDENTIALS_SCHEMA = z
+  .object({
+    login: z.string().default('username').describe('Логин пользователя'),
+    password: z.string().min(8).describe('Пароль пользователя')
+  })
+  .strict()
 
 export const REGISTER_RESPONSE_SCHEMA = z
   .object({
