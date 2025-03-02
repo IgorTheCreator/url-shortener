@@ -3,6 +3,7 @@ import fp from 'fastify-plugin'
 import fastifyJwt from '@fastify/jwt'
 import { Role } from '@prisma/client'
 import { IPayload } from '../shared/interfaces'
+import { JWT_OPTIONS } from '../configs'
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -16,12 +17,7 @@ declare module 'fastify' {
 async function jwtPlugin(server: FastifyInstance) {
   const refreshTokens = server.prisma.refreshToken
 
-  server.register(fastifyJwt, {
-    secret: process.env.JWT_TOKEN_SECRET,
-    sign: {
-      expiresIn: '1h'
-    }
-  })
+  server.register(fastifyJwt, JWT_OPTIONS)
 
   server.decorate('authenticate', function authenticate(...roles) {
     return async function auth(request: FastifyRequest, reply: FastifyReply) {

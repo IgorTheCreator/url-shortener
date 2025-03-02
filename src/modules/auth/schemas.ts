@@ -13,12 +13,11 @@ export const REGISTER_RESPONSE_SCHEMA = z
 
 export const LOGIN_RESPONSE_SCHEMA = z
   .object({
-    accessToken: z.string(),
-    refreshToken: z.string().optional()
+    accessToken: z.string()
   })
-  .required({ accessToken: true, refreshToken: true })
+  .required({ accessToken: true })
 
-export const REFRESH_RESPONSE_SCHEMA = LOGIN_RESPONSE_SCHEMA.omit({ refreshToken: true })
+export const REFRESH_RESPONSE_SCHEMA = LOGIN_RESPONSE_SCHEMA.extend({})
 
 export const LOGOUT_RESPONSE_SCHEMA = z
   .object({

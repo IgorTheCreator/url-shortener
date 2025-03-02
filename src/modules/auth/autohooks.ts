@@ -202,9 +202,13 @@ async function authAutoHooks(server: FastifyInstance) {
   server.ready().then(() => {
     server.scheduler.addCronJob(clearRefreshTokensJob)
   })
+
+  server.addHook('onClose', async function cronOnCloseHook(server: FastifyInstance) {
+    server.scheduler.stop()
+  })
 }
 
 export default fp(authAutoHooks, {
   encapsulate: true,
-  dependencies: ['prisma', 'sensible', 'keydb']
+  dependencies: ['prisma', 'sensible', 'redis']
 })
