@@ -1,5 +1,7 @@
+import { join } from 'node:path'
 import { FastifyInstance } from 'fastify'
 import fp from 'fastify-plugin'
+import AutoLoad from '@fastify/autoload'
 import {
   Redirect,
   RedirectRespose,
@@ -21,6 +23,10 @@ declare module 'fastify' {
 
 async function urlsAutoHooks(server: FastifyInstance) {
   const { url: urls } = server.prisma
+
+  server.register(AutoLoad, {
+    dir: join(__dirname, 'plugins')
+  })
 
   server.decorate('urlsService', {
     async shortUrl({ alias, expiresAt, long }, userId) {
@@ -71,7 +77,10 @@ async function urlsAutoHooks(server: FastifyInstance) {
         const url = await urls.findUnique({
           where: {
             short,
-            isActive: true
+            isActive: true,
+            expiresAt: {
+              gte: new Date(new Date().setHours(0, 0, 0, 0))
+            }
           },
           select: {
             long: true
@@ -128,5 +137,5 @@ async function urlsAutoHooks(server: FastifyInstance) {
 
 export default fp(urlsAutoHooks, {
   encapsulate: true,
-  dependencies: ['redis', 'prisma', 'sensible', 'sqids']
+  dependencies: ['redis', 'prisma', 'sensible']
 })
