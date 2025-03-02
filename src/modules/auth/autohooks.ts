@@ -4,7 +4,7 @@ import { FastifyInstance } from 'fastify'
 import fp from 'fastify-plugin'
 import { AsyncTask, CronJob } from 'toad-scheduler'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
-import { IPayload } from 'src/shared/interfaces'
+import { IPayload } from '../../shared/interfaces'
 import { AuthResponse, Credentials, LogoutResponse } from './types'
 
 declare module 'fastify' {

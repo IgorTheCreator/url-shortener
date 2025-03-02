@@ -1,15 +1,12 @@
 import 'dotenv/config'
 import closeWithGrace from 'close-with-grace'
 import { build } from './build'
-import { serverOptions } from './configs/server-options'
+import { LISTEN_OPTIONS, SERVER_OPTIONS } from './configs'
 
 async function main() {
-  const server = await build(serverOptions)
+  const server = await build(SERVER_OPTIONS)
 
-  server.listen({
-    host: process.env.HOST,
-    port: +process.env.APP_PORT!
-  })
+  server.listen(LISTEN_OPTIONS)
 
   closeWithGrace(async ({ err }) => {
     if (err) {

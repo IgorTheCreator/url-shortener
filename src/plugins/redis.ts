@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify'
 import fp from 'fastify-plugin'
 import Redis from 'ioredis'
+import { REDIS_OPTIONS } from '../configs'
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -9,11 +10,7 @@ declare module 'fastify' {
 }
 
 async function connetToCache() {
-  const redis = new Redis({
-    host: process.env.CACHE_HOST,
-    port: +process.env.CACHE_PORT,
-    password: process.env.CACHE_PASSWORD
-  })
+  const redis = new Redis(REDIS_OPTIONS)
 
   return redis
 }

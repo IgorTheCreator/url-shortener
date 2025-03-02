@@ -1,6 +1,6 @@
-import { FastifyServerOptions } from 'fastify'
+import { FastifyListenOptions, FastifyServerOptions } from 'fastify'
 
-export const serverOptions: FastifyServerOptions = {
+export const SERVER_OPTIONS: FastifyServerOptions = {
   logger:
     process.env.NODE_ENV === 'dev'
       ? {
@@ -10,4 +10,9 @@ export const serverOptions: FastifyServerOptions = {
         }
       : true
   // logger: false
+}
+
+export const LISTEN_OPTIONS: FastifyListenOptions = {
+  host: process.env.APP_HOST,
+  port: +process.env.APP_PORT!
 }
