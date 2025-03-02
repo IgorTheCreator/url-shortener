@@ -51,7 +51,7 @@ async function urlsAutoHooks(server: FastifyInstance) {
             short,
             long,
             userId,
-            expiresAt: new Date(expiresAt)
+            expiresAt: expiresAt ? new Date(expiresAt) : undefined
           },
           select: {
             short: true,
@@ -78,9 +78,14 @@ async function urlsAutoHooks(server: FastifyInstance) {
           where: {
             short,
             isActive: true,
-            expiresAt: {
-              gte: new Date(new Date().setHours(0, 0, 0, 0))
-            }
+            OR: [
+              { expiresAt: null },
+              {
+                expiresAt: {
+                  gte: new Date(new Date().setHours(0, 0, 0, 0))
+                }
+              }
+            ]
           },
           select: {
             long: true
