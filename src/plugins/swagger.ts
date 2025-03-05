@@ -17,7 +17,7 @@ import {
   REDIRECT_SCHEMA,
   SHORT_URL_RESPONSE_SCHEMA,
   SHORT_URL_SCHEMA
-} from 'src/modules/urls/schemas'
+} from '../modules/urls/schemas'
 
 async function swaggerPlugin(server: FastifyInstance) {
   server.register(fastifySwagger, {

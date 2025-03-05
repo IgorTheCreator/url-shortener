@@ -1,5 +1,5 @@
 services:
-  test_db:
+  url_shortener_db:
     image: postgres:latest
     container_name: test_db
     restart: unless-stopped
@@ -14,7 +14,7 @@ services:
     networks:
       - app_network
 
-  test_cache:
+  url_shortener_cache:
     image: redis:latest
     container_name: test_cache
     restart: unless-stopped
@@ -28,8 +28,38 @@ services:
     networks:
       - app_network
 
+  url_shortener_app:
+    image: url_shortener_app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - data_app:/usr/src/app
+    restart: unless-stopped
+    ports:
+      - ${APP_PORT}:${APP_PORT}
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - APP_HOST=${APP_HOST}
+      - APP_PORT=${APP_PORT}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - DATABASE_USER=${DATABASE_USER}
+      - DATABASE_NAME=${DATABASE_NAME}
+      - DATABASE_PORT=${DATABASE_PORT}
+      - DATABASE_URL=${DATABASE_URL}
+      - CACHE_PORT=${CACHE_PORT}
+      - CACHE_PASSWORD=${CACHE_PASSWORD}
+      - CACHE_HOST=${CACHE_HOST}
+      - JWT_TOKEN_SECRET=${JWT_TOKEN_SECRET}
+    depends_on:
+      - url_shortener_cache
+      - url_shortener_db
+    networks:
+      - app_network
+
 volumes:
   data_db:
+  data_app:
   cache_data:
     driver: local
 

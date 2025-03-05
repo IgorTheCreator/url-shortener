@@ -11,7 +11,7 @@ import {
   SHORT_URL_SCHEMA
 } from './schemas'
 import { Redirect, ShortUrl, StatusBody, StatusParams } from './types'
-import { IPayload } from 'src/shared/interfaces'
+import { IPayload } from '../../shared/interfaces'
 
 const urlsRoutes: FastifyPluginAsyncZod = async function urlsRoutes(server: FastifyInstance) {
   server.post(
@@ -35,8 +35,12 @@ const urlsRoutes: FastifyPluginAsyncZod = async function urlsRoutes(server: Fast
 
   server.get(
     '/:short',
-    { schema: { params: REDIRECT_SCHEMA, tags: ['urls'] } },
+    {
+      preHandler: [server.findUrlInCache],
+      schema: { params: REDIRECT_SCHEMA, tags: ['urls'] }
+    },
     async function redirect(request: FastifyRequest<{ Params: Redirect }>, reply: FastifyReply) {
+      console.log('1111111111')
       const { long } = await server.urlsService.redirect(request.params)
       reply.redirect(long)
     }

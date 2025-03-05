@@ -4,7 +4,7 @@ import fp from 'fastify-plugin'
 import AutoLoad from '@fastify/autoload'
 import {
   Redirect,
-  RedirectRespose,
+  RedirectResponse,
   ShortUrl,
   ShortUrlResponse,
   StatusBody,
@@ -15,9 +15,14 @@ declare module 'fastify' {
   interface FastifyInstance {
     urlsService: {
       shortUrl: (url: ShortUrl, userId: string) => Promise<ShortUrlResponse>
-      redirect: (data: Redirect) => Promise<RedirectRespose>
+      redirect: (data: Redirect) => Promise<RedirectResponse>
       changeStatus: (data: StatusBody & StatusParams, userId: string) => Promise<void>
+      saveUrlInCache: (short: string, long: string) => Promise<void>
     }
+    findUrlInCache: (
+      request: FastifyRequest<{ Params: Redirect }>,
+      reply: FastifyReply
+    ) => Promise<RedirectResponse | void>
   }
 }
 
@@ -104,6 +109,7 @@ async function urlsAutoHooks(server: FastifyInstance) {
             }
           }
         })
+        await this.saveUrlInCache(short, url.long)
         return { long: url.long }
       } catch (e) {
         server.log.error(e)
@@ -136,6 +142,37 @@ async function urlsAutoHooks(server: FastifyInstance) {
         if (e.statusCode < 500) throw e
         throw server.httpErrors.internalServerError('Something went wrong')
       }
+    },
+    async saveUrlInCache(short, long) {
+      try {
+        await server.redis.set(short, long, 'EX', 86400)
+      } catch (e) {
+        server.log.error(e)
+      }
+    }
+  })
+
+  server.decorate('findUrlInCache', async function findUrlInCache(request, reply) {
+    try {
+      const { short } = request.params
+      const long = await server.redis.get(short)
+      if (long) {
+        await urls.update({
+          where: {
+            short
+          },
+          data: {
+            clickCounts: {
+              increment: 1
+            }
+          }
+        })
+        reply.code(302)
+        console.log(long)
+        reply.redirect(long)
+      }
+    } catch (e) {
+      server.log.error(e)
     }
   })
 }

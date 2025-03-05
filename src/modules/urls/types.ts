@@ -9,7 +9,7 @@ import {
 export type ShortUrl = z.infer<typeof SHORT_URL_SCHEMA>
 export type ShortUrlResponse = z.infer<typeof SHORT_URL_RESPONSE_SCHEMA>
 export type Redirect = z.infer<typeof REDIRECT_SCHEMA>
-export type RedirectRespose = {
+export type RedirectResponse = {
   long: string
 }
 export type StatusParams = Redirect

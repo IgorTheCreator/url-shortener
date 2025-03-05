@@ -1,5 +1,4 @@
-import * as crypto from 'node:crypto'
-import * as util from 'node:util'
+import * as argon2 from 'argon2'
 import { FastifyInstance } from 'fastify'
 import fp from 'fastify-plugin'
 import { AsyncTask, CronJob } from 'toad-scheduler'
@@ -10,9 +9,8 @@ import { AuthResponse, Credentials, LogoutResponse } from './types'
 declare module 'fastify' {
   interface FastifyInstance {
     utils: {
-      generateSalt: () => string
-      hashData: (data: string, salt: string) => Promise<string>
-      compare: (data: string, salt: string, hash: string) => Promise<boolean>
+      hashData: (data: string) => Promise<string>
+      compare: (data: string, hash: string) => Promise<boolean>
     }
     authService: {
       register: (credentials: Credentials) => Promise<{ id: string }>
@@ -32,15 +30,19 @@ async function authAutoHooks(server: FastifyInstance) {
   const REFRESH_TOKEN_VALID_DAYS = 7
 
   server.decorate('utils', {
-    generateSalt() {
-      return crypto.randomBytes(16).toString('base64')
+    async hashData(data) {
+      const hash = await argon2.hash(data, {
+        type: argon2.argon2id,
+        memoryCost: 19456,
+        timeCost: 2,
+        parallelism: 1,
+        hashLength: 32
+      })
+      return hash
     },
-    async hashData(data, salt) {
-      const pbkdf2Async = util.promisify(crypto.pbkdf2)
-      return (await pbkdf2Async(data, salt, 100000, 64, 'sha512')).toString('base64')
-    },
-    async compare(data, salt, hash) {
-      return hash === (await this.hashData(data, salt))
+    async compare(data, hash) {
+      const isValid = await argon2.verify(hash, data)
+      return isValid
     }
   })
 
@@ -55,13 +57,10 @@ async function authAutoHooks(server: FastifyInstance) {
         if (existingUser) {
           throw server.httpErrors.conflict('User already exists')
         }
-
-        const salt = server.utils.generateSalt()
-        const hash = await server.utils.hashData(password, salt)
+        const hash = await server.utils.hashData(password)
         const user = await users.create({
           data: {
             login,
-            salt,
             password: hash
           },
           select: {
@@ -85,14 +84,13 @@ async function authAutoHooks(server: FastifyInstance) {
           },
           select: {
             password: true,
-            salt: true,
             id: true,
             role: true
           }
         })
         if (!user) throw server.httpErrors.badRequest('Invalid login or password')
 
-        const isValidPassword = await server.utils.compare(password, user.salt, user.password)
+        const isValidPassword = await server.utils.compare(password, user.password)
         if (!isValidPassword) throw server.httpErrors.badRequest('Invalid login or password')
 
         const payload: IPayload = {
