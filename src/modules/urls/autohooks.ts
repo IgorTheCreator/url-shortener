@@ -10,6 +10,7 @@ import {
   StatusBody,
   StatusParams
 } from './types'
+import { AsyncTask, CronJob } from 'toad-scheduler'
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -174,6 +175,27 @@ async function urlsAutoHooks(server: FastifyInstance) {
     } catch (e) {
       server.log.error(e)
     }
+  })
+
+  const clearShortenUrlsTask = new AsyncTask(
+    'clear expired shorten urls',
+    async function clearShortenUrls() {
+      await urls.deleteMany({
+        where: {
+          expiresAt: {
+            lt: new Date().toISOString()
+          }
+        }
+      })
+    },
+    async function clearShortenUrlsErrorHandler(e) {
+      server.log.error(e)
+    }
+  )
+  const clearShortenUrls = new CronJob({ cronExpression: '0 0 * * *' }, clearShortenUrlsTask)
+
+  server.ready().then(() => {
+    server.scheduler.addCronJob(clearShortenUrls)
   })
 }
 
