@@ -1,14 +1,18 @@
 import { FastifyListenOptions, FastifyServerOptions } from 'fastify'
 
+function getLoggerOptions() {
+  if (process.stdout.isTTY) {
+    return {
+      transport: {
+        target: 'pino-pretty'
+      }
+    }
+  }
+  return true
+}
+
 export const SERVER_OPTIONS: FastifyServerOptions = {
-  logger:
-    process.env.NODE_ENV === 'dev'
-      ? {
-          transport: {
-            target: 'pino-pretty'
-          }
-        }
-      : true
+  logger: getLoggerOptions()
   // logger: false
 }
 

@@ -39,7 +39,6 @@ services:
     ports:
       - ${APP_PORT}:${APP_PORT}
     environment:
-      - NODE_ENV=${NODE_ENV}
       - APP_HOST=${APP_HOST}
       - APP_PORT=${APP_PORT}
       - DATABASE_PASSWORD=${DATABASE_PASSWORD}
