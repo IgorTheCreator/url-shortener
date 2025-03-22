@@ -13,7 +13,6 @@ function getLoggerOptions() {
 
 export const SERVER_OPTIONS: FastifyServerOptions = {
   logger: getLoggerOptions()
-  // logger: false
 }
 
 export const LISTEN_OPTIONS: FastifyListenOptions = {
